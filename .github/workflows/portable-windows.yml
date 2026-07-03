@@ -40,7 +40,9 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-          cache: pnpm
+          # No "cache: pnpm" here on purpose: node cache needs a pnpm-lock.yaml,
+          # which this fork doesn't ship. (If you push the lockfile from the zip,
+          # you can add it back as:  cache: pnpm )
 
       - name: Install frontend dependencies
         run: pnpm install
