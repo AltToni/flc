@@ -1,8 +1,9 @@
 name: portable-windows
 
 # Builds a single portable FLC.exe (no installer, no admin rights needed to RUN it).
-# --no-bundle compiles the executable but skips MSI/updater packaging, so no
-# code-signing keys (TAURI_SIGNING_PRIVATE_KEY) are required.
+# FLC 7.5.1 is a BUN project (tauri.conf.json -> beforeBuildCommand: "bun run build"),
+# so this workflow uses Bun, not pnpm. --no-bundle compiles the .exe and skips
+# MSI/updater packaging, so no code-signing keys (TAURI_SIGNING_PRIVATE_KEY) are needed.
 #
 # Usage:
 #   1. Commit this file to .github/workflows/portable-windows.yml
@@ -27,28 +28,16 @@ jobs:
         with:
           workspaces: "./src-tauri -> target"
 
-      - uses: pnpm/action-setup@v6
-        with:
-          # This fork (v7.5.1) has no "packageManager" field and no lockfile,
-          # so pnpm's version MUST be set here.
-          # v9 is chosen on purpose: pnpm 10+ blocks dependency build scripts by
-          # default, which can break tailwind-oxide / esbuild on this older repo.
-          # NOTE: if you later push a package.json that DOES contain a
-          # "packageManager" field, REMOVE these two lines to avoid a conflict.
-          version: 9
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          # No "cache: pnpm" here on purpose: node cache needs a pnpm-lock.yaml,
-          # which this fork doesn't ship. (If you push the lockfile from the zip,
-          # you can add it back as:  cache: pnpm )
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
 
       - name: Install frontend dependencies
-        run: pnpm install
+        run: bun install
 
+      # Runs the frontend build (bun run build) then compiles the Rust app.
+      # --no-bundle => produces the raw exe, skips MSI + updater signing.
       - name: Build portable executable
-        run: pnpm tauri build --no-bundle
+        run: bunx tauri build --no-bundle
 
       - name: Upload portable exe
         uses: actions/upload-artifact@v4
