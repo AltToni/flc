@@ -27,9 +27,15 @@ jobs:
         with:
           workspaces: "./src-tauri -> target"
 
-      # v6 reads the pnpm version from the "packageManager" field in package.json.
-      # (If it ever still complains, add:  with: { version: 11.9.0 } )
       - uses: pnpm/action-setup@v6
+        with:
+          # This fork (v7.5.1) has no "packageManager" field and no lockfile,
+          # so pnpm's version MUST be set here.
+          # v9 is chosen on purpose: pnpm 10+ blocks dependency build scripts by
+          # default, which can break tailwind-oxide / esbuild on this older repo.
+          # NOTE: if you later push a package.json that DOES contain a
+          # "packageManager" field, REMOVE these two lines to avoid a conflict.
+          version: 9
 
       - uses: actions/setup-node@v6
         with:
