@@ -1,0 +1,46 @@
+name: portable-windows
+
+# Builds a single portable FLC.exe (no installer, no admin rights needed to RUN it).
+# --no-bundle compiles the executable but skips MSI/updater packaging, so no
+# code-signing keys (TAURI_SIGNING_PRIVATE_KEY) are required.
+#
+# Usage:
+#   1. Commit this file to .github/workflows/portable-windows.yml
+#   2. GitHub -> Actions tab -> "portable-windows" -> Run workflow
+#   3. Open the finished run -> Artifacts -> download "flc-portable-windows"
+#   4. Unzip -> flc.exe -> copy to the target PC and double-click.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Install frontend dependencies
+        run: pnpm install
+
+      - name: Build portable executable
+        run: pnpm tauri build --no-bundle
+
+      - name: Upload portable exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: flc-portable-windows
+          path: src-tauri/target/release/*.exe
+          if-no-files-found: error
